@@ -4,6 +4,7 @@ import requestValidator from '../middlewares/requestValidator.js'
 import sessionValidator from '../middlewares/sessionValidator.js'
 import * as controller from '../controllers/chatsController.js'
 import getMessages from '../controllers/getMessages.js'
+import verifyApiKey from '../middlewares/verifyApiKey.js'
 
 const router = Router()
 
@@ -13,9 +14,9 @@ router.get('/:jid', query('id').notEmpty(), requestValidator, sessionValidator, 
 
 router.post(
     '/send',
-    query('id').notEmpty(),
     body('receiver').notEmpty(),
     body('message').notEmpty(),
+    verifyApiKey,
     requestValidator,
     sessionValidator,
     controller.send

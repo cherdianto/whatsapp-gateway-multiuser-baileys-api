@@ -24,25 +24,30 @@ const getAll = (req, res) => {
     response(res, 200, true, '', sessions)
 }
 
-const add = (req, res) => {
-    const { id, isLegacy } = req.body
 
-    if (isSessionExists(id)) {
-        return response(res, 409, false, 'Session already exists, please use another id.')
+// @req.body {id:deviceId, isLegacy:false}
+const add = (req, res) => {
+    const deviceId = req.device.id || req.body.id
+    const {isLegacy} = req.body
+
+    console.log(deviceId, isLegacy)
+
+    if (isSessionExists(deviceId)) {
+        return response(res, 409, false, 'Session already exists')
     }
 
-    createSession(id, isLegacy === 'true', res)
+    createSession(deviceId, isLegacy, res)
 }
 
 const del = async (req, res) => {
-    const { id } = req.params
-    const session = getSession(id)
+    const deviceId = req.device.id
+    const session = getSession(deviceId)
 
     try {
         await session.logout()
     } catch {
     } finally {
-        deleteSession(id, session.isLegacy)
+        deleteSession(deviceId, session.isLegacy)
     }
 
     response(res, 200, true, 'The session has been successfully deleted.')

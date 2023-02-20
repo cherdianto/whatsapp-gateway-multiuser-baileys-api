@@ -13,6 +13,7 @@ import makeWASocket, {
 import { toDataURL } from 'qrcode'
 import __dirname from './dirname.js'
 import response from './response.js'
+import Device from './models/Device.js'
 
 const sessions = new Map()
 const retries = new Map()
@@ -108,8 +109,17 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
 
+        console.log(connection)
+
         if (connection === 'open') {
             retries.delete(sessionId)
+            console.log('i am connected')
+
+            // UPDATE DATABASE
+            await Device.findByIdAndUpdate( sessionId, {
+                $set: { connectionStatus: 'connected'}
+            })
+
         }
 
         if (connection === 'close') {
@@ -127,6 +137,8 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
+
+            
         }
 
         if (update.qr) {
@@ -167,7 +179,7 @@ const getAllSessions = () => {
     return sessionList ?? null
 }
 
-const deleteSession = (sessionId, isLegacy = false) => {
+const deleteSession = async (sessionId, isLegacy = false) => {
     const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId + (isLegacy ? '.json' : '')
     const storeFile = `${sessionId}_store.json`
     const rmOptions = { force: true, recursive: true }
@@ -177,6 +189,11 @@ const deleteSession = (sessionId, isLegacy = false) => {
 
     sessions.delete(sessionId)
     retries.delete(sessionId)
+
+    // UPDATE DATABASE
+    await Device.findByIdAndUpdate( sessionId, {
+        $set: { connectionStatus: 'disconnected'}
+    })
 }
 
 const getChatList = (sessionId, isGroup = false) => {

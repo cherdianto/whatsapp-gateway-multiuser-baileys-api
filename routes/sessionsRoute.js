@@ -3,17 +3,19 @@ import { body } from 'express-validator'
 import requestValidator from '../middlewares/requestValidator.js'
 import sessionValidator from '../middlewares/sessionValidator.js'
 import * as controller from '../controllers/sessionsController.js'
+import verifyToken from '../middlewares/verifyToken.js'
+import verifyApiKey from '../middlewares/verifyApiKey.js'
 
 const router = Router()
 
-router.get('/find/:id', sessionValidator, controller.find)
+router.get('/find', verifyApiKey, sessionValidator, controller.find)
 
-router.get('/all', controller.getAll)
+router.get('/all', verifyToken, controller.getAll)
 
-router.get('/status/:id', sessionValidator, controller.status)
+router.get('/status', verifyApiKey, sessionValidator, controller.status)
 
-router.post('/add', body('id').notEmpty(), body('isLegacy').notEmpty(), requestValidator, controller.add)
+router.post('/add', body('isLegacy').notEmpty(), verifyApiKey, requestValidator, controller.add)
 
-router.delete('/delete/:id', sessionValidator, controller.del)
+router.delete('/delete', verifyToken, verifyApiKey, sessionValidator, controller.del)
 
 export default router

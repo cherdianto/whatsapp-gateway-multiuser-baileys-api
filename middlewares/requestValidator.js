@@ -3,6 +3,7 @@ import response from './../response.js'
 
 const validate = (req, res, next) => {
     const errors = validationResult(req)
+    console.log('validate error :')
     console.log(errors)
 
     if (!errors.isEmpty()) {
