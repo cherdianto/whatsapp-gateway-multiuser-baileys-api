@@ -7,11 +7,7 @@
   "scripts": {
     "start": "node index.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/yusufjk/baileys-whatsapp-api.git"
-  },
-  "author": "Yusuf JK <yjkheraluwala@gmail.com>",
+  "author": "",
   "engines": {
     "node": ">=14.5.0"
   },

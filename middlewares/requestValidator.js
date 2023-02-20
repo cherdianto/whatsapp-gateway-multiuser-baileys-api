@@ -3,6 +3,7 @@ import response from './../response.js'
 
 const validate = (req, res, next) => {
     const errors = validationResult(req)
+    console.log(errors)
 
     if (!errors.isEmpty()) {
         return response(res, 400, false, 'Please fill out all required input.')
