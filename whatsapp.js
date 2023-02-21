@@ -14,6 +14,8 @@ import { toDataURL } from 'qrcode'
 import __dirname from './dirname.js'
 import response from './response.js'
 import Device from './models/Device.js'
+import cron from 'node-cron'
+import Message from './models/Message.js'
 
 const sessions = new Map()
 const retries = new Map()
@@ -44,7 +46,11 @@ const shouldReconnect = (sessionId) => {
     return false
 }
 
-const createSession = async (sessionId, isLegacy = false, res = null) => {
+let ctask = {}
+
+const createSession = async (sessionId, isLegacy = false, res = null, cronTask = ctask) => {
+    console.log('crontask create ' + cronTask)
+    
     const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId + (isLegacy ? '.json' : '')
 
     const logger = pino({ level: 'warn' })
@@ -108,6 +114,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
     wa.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
+        // const cronTask = res.locals.cronTask
 
         console.log(connection)
 
@@ -119,6 +126,82 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
             await Device.findByIdAndUpdate( sessionId, {
                 $set: { connectionStatus: 'connected'}
             })
+
+    console.log('crontask wa ' + cronTask)
+
+            // CRON START HERE
+            cronTask[sessionId] = cron.schedule('*/20 * * * * *', async () => {
+                console.log('cron started ')
+                console.log('halo ')
+                const response = await Message.findOne({
+                    deviceId: sessionId,
+                    status: '1'
+                }).sort({
+                    priority: -1,
+                    time: 1
+                })
+                console.log(response)
+                if (!response) {
+                    console.log('no task left')
+                    console.log('cron idle ' + sessionId)
+                    await Device.findByIdAndUpdate(
+                        sessionId,
+                        { $set: { cronIdle: true } }
+                    )
+                    cronTask[sessionId].stop()
+                    return
+                }
+    
+                try {
+                    console.log('masuk sini')
+                    const session = getSession(sessionId)
+                    const receiver = formatPhone(response.to)
+                    const message = response.message
+                    // console.log(session)
+                    console.log(message)
+
+
+                    try {
+                        const exists = await isExists(session, receiver)
+                        console.log('number exists : ' + exists)
+                        if (!exists) {
+                            console.log('number not whatsapp')
+                            // return response(res, 400, false, 'The receiver number is not exists.')
+                        }
+                
+                        await sendMessage(session, receiver, message, 0)
+                        console.log('done sending message')
+                        // response(res, 200, true, 'The message has been successfully sent.')
+                    } catch (error) {
+                        console.log('error sending message')
+                        console.log(error)
+                        // response(res, 500, false, 'Failed to send the message.')
+                    }
+                } catch (error) {
+                    console.log(error)
+                    return
+                }
+    
+    
+                const updating = await Message.findByIdAndUpdate(
+                    response._id, {
+                        $set: {
+                            status: '2'
+                        }
+                    }, {
+                        new: true
+                    }
+                )
+    
+                if (!updating) {
+                    console.log('updating status error')
+                    return
+                }
+    
+                console.log('send message ' + response.message)
+            })
+    
+            cronTask[sessionId].start()
 
         }
 
@@ -133,7 +216,7 @@ const createSession = async (sessionId, isLegacy = false, res = null) => {
 
             setTimeout(
                 () => {
-                    createSession(sessionId, isLegacy, res)
+                    createSession(sessionId, isLegacy, res, cronTask)
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
@@ -272,7 +355,10 @@ const cleanup = () => {
     })
 }
 
-const init = () => {
+const init = (cronTask) => {
+    console.log('crontask init ' + cronTask)
+    ctask = cronTask
+
     readdir(sessionsDir(), (err, files) => {
         if (err) {
             throw err
@@ -286,8 +372,8 @@ const init = () => {
             const filename = file.replace('.json', '')
             const isLegacy = filename.split('_', 1)[0] !== 'md'
             const sessionId = filename.substring(isLegacy ? 7 : 3)
-
-            createSession(sessionId, isLegacy)
+            console.log('cttask ' + ctask)
+            createSession(sessionId, isLegacy, ctask)
         }
     })
 }

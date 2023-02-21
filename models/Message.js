@@ -20,7 +20,7 @@ const Schema = new mongoose.Schema({
         default: false
     },
     message: {
-        type: String,
+        type: Object,
         required: true
     },
     ref_id: {
