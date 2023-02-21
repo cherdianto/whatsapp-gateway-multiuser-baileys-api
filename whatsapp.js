@@ -114,25 +114,17 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
     wa.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
-        // const cronTask = res.locals.cronTask
-
-        console.log(connection)
 
         if (connection === 'open') {
             retries.delete(sessionId)
-            console.log('i am connected')
 
             // UPDATE DATABASE
             await Device.findByIdAndUpdate( sessionId, {
                 $set: { connectionStatus: 'connected'}
             })
 
-    console.log('crontask wa ' + cronTask)
-
             // CRON START HERE
             cronTask[sessionId] = cron.schedule('*/20 * * * * *', async () => {
-                console.log('cron started ')
-                console.log('halo ')
                 const response = await Message.findOne({
                     deviceId: sessionId,
                     status: '1'
@@ -140,7 +132,7 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
                     priority: -1,
                     time: 1
                 })
-                console.log(response)
+                
                 if (!response) {
                     console.log('no task left')
                     console.log('cron idle ' + sessionId)
@@ -153,24 +145,20 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
                 }
     
                 try {
-                    console.log('masuk sini')
                     const session = getSession(sessionId)
                     const receiver = formatPhone(response.to)
                     const message = response.message
-                    // console.log(session)
-                    console.log(message)
-
 
                     try {
                         const exists = await isExists(session, receiver)
-                        console.log('number exists : ' + exists)
+                        // console.log('number exists : ' + exists)
                         if (!exists) {
-                            console.log('number not whatsapp')
+                            console.log('invalid whatsapp number')
                             // return response(res, 400, false, 'The receiver number is not exists.')
                         }
                 
                         await sendMessage(session, receiver, message, 0)
-                        console.log('done sending message')
+                        console.log('message sent')
                         // response(res, 200, true, 'The message has been successfully sent.')
                     } catch (error) {
                         console.log('error sending message')
@@ -356,7 +344,6 @@ const cleanup = () => {
 }
 
 const init = (cronTask) => {
-    console.log('crontask init ' + cronTask)
     ctask = cronTask
 
     readdir(sessionsDir(), (err, files) => {
@@ -372,7 +359,7 @@ const init = (cronTask) => {
             const filename = file.replace('.json', '')
             const isLegacy = filename.split('_', 1)[0] !== 'md'
             const sessionId = filename.substring(isLegacy ? 7 : 3)
-            console.log('cttask ' + ctask)
+            
             createSession(sessionId, isLegacy, ctask)
         }
     })
