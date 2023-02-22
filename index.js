@@ -5,6 +5,7 @@ import routes from './api/routes.js'
 import { init, cleanup } from './whatsapp.js'
 import cors from 'cors'
 import morgan from 'morgan'
+import cookieParser from 'cookie-parser'
 import dbConnection from './libraries/dbConnect.js'
 import errorHandler from './middlewares/errorMiddleware.js'
 import bypassVariable from './middlewares/bypassVariable.js'
@@ -22,10 +23,10 @@ if(process.env.ENV === 'dev'){
 } else {
     app.use(cors({credentials: true, origin: `${process.env.CLIENT_URL_PROD}`}));
 }
-app.use(cookieParser())
 app.use(morgan('dev'));
-app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser())
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use('/api', bypassVariable({ cronTask}), routes)
 
 
