@@ -1,4 +1,4 @@
-# Baileys API
+# WHATSAPP GATEWAY API - BAILEYS
 
 An implementation of [@adiwajshing/Baileys](https://github.com/adiwajshing/Baileys) as a fully functional RESTful API service with multiple device and multiple users support. 
 
@@ -9,8 +9,8 @@ An implementation of [@adiwajshing/Baileys](https://github.com/adiwajshing/Baile
 3. Password Recovery
 
 ## Production demo
-API : https://apiwabot.cherdianto.site
-CLIENT : https://wabot.cherdianto.site
+- API       : https://apiwabot.cherdianto.site
+- CLIENT    : https://wabot.cherdianto.site
 
 ## Notice
 
