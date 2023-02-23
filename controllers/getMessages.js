@@ -1,5 +1,5 @@
-import { getSession } from '../whatsapp.js'
-import response from './../response.js'
+import { getSession } from '../utils/whatsapp.js'
+import response from '../utils/response.js'
 
 const getMessages = async (req, res) => {
     const session = getSession(res.locals.sessionId)

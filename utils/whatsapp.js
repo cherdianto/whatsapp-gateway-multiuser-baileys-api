@@ -11,17 +11,17 @@ import makeWASocket, {
     delay,
 } from '@adiwajshing/baileys'
 import { toDataURL } from 'qrcode'
-import __dirname from './dirname.js'
+import __dirname from '../dirname.js'
 import response from './response.js'
-import Device from './models/Device.js'
+import Device from '../models/Device.js'
 import cron from 'node-cron'
-import Message from './models/Message.js'
+import Message from '../models/Message.js'
 
 const sessions = new Map()
 const retries = new Map()
 
 const sessionsDir = (sessionId = '') => {
-    return join(__dirname, 'sessions', sessionId ? sessionId : '')
+    return join(__dirname, './sessions', sessionId ? sessionId : '')
 }
 
 const isSessionExists = (sessionId) => {
@@ -48,7 +48,7 @@ const shouldReconnect = (sessionId) => {
 
 let ctask = {}
 
-const createSession = async (sessionId, isLegacy = false, res = null, cronTask = ctask) => {
+const createSession = async ({sessionId, isLegacy = false, res = null, cronTask = ctask, io}) => {
     console.log('crontask create ' + cronTask)
     
     const sessionFile = (isLegacy ? 'legacy_' : 'md_') + sessionId + (isLegacy ? '.json' : '')
@@ -94,23 +94,6 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
         }
     })
 
-    // Automatically read incoming messages, uncomment below codes to enable this behaviour
-    /*
-    wa.ev.on('messages.upsert', async (m) => {
-        const message = m.messages[0]
-
-        if (!message.key.fromMe && m.type === 'notify') {
-            await delay(1000)
-
-            if (isLegacy) {
-                await wa.chatRead(message.key, 1)
-            } else {
-                await wa.sendReadReceipt(message.key.remoteJid, message.key.participant, [message.key.id])
-            }
-        }
-    })
-    */
-
     wa.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update
         const statusCode = lastDisconnect?.error?.output?.statusCode
@@ -151,7 +134,6 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
 
                     try {
                         const exists = await isExists(session, receiver)
-                        // console.log('number exists : ' + exists)
                         if (!exists) {
                             console.log('invalid whatsapp number')
                             // return response(res, 400, false, 'The receiver number is not exists.')
@@ -162,7 +144,7 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
                         // response(res, 200, true, 'The message has been successfully sent.')
                     } catch (error) {
                         console.log('error sending message')
-                        console.log(error)
+                        // console.log(error)
                         // response(res, 500, false, 'Failed to send the message.')
                     }
                 } catch (error) {
@@ -194,17 +176,21 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
         }
 
         if (connection === 'close') {
+            console.log('connection closed')
             if (statusCode === DisconnectReason.loggedOut || !shouldReconnect(sessionId)) {
+                console.log('reason logout')
                 if (res && !res.headersSent) {
                     response(res, 500, false, 'Unable to create session.')
                 }
-
+                // socket.emit('statusConnection', 'unable to create session')
+                console.log('delete session')
                 return deleteSession(sessionId, isLegacy)
             }
 
             setTimeout(
                 () => {
-                    createSession(sessionId, isLegacy, res, cronTask)
+                    console.log('check here')
+                    createSession({sessionId, isLegacy, res, cronTask, io})
                 },
                 statusCode === DisconnectReason.restartRequired ? 0 : parseInt(process.env.RECONNECT_INTERVAL ?? 0)
             )
@@ -213,10 +199,10 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
         }
 
         if (update.qr) {
+            console.log('update qr')
             if (res && !res.headersSent) {
                 try {
                     const qr = await toDataURL(update.qr)
-
                     response(res, 200, true, 'QR code received, please scan the QR code.', { qr })
 
                     return
@@ -233,6 +219,7 @@ const createSession = async (sessionId, isLegacy = false, res = null, cronTask =
             }
         }
     })
+
 }
 
 /**
@@ -343,7 +330,7 @@ const cleanup = () => {
     })
 }
 
-const init = (cronTask) => {
+const init = ({io, cronTask}) => {
     ctask = cronTask
 
     readdir(sessionsDir(), (err, files) => {
@@ -360,7 +347,7 @@ const init = (cronTask) => {
             const isLegacy = filename.split('_', 1)[0] !== 'md'
             const sessionId = filename.substring(isLegacy ? 7 : 3)
             
-            createSession(sessionId, isLegacy, ctask)
+            createSession({sessionId, isLegacy, cronTask : ctask, io})
         }
     })
 }

@@ -5,7 +5,7 @@ import authRoute from '../routes/authRoute.js'
 import deviceRoute from '../routes/deviceRoute.js'
 import messageRoute from '../routes/messageRoute.js'
 import groupsRoute from '../routes/groupsRoute.js'
-import response from '../response.js'
+import response from '../utils/response.js'
 
 const router = Router()
 

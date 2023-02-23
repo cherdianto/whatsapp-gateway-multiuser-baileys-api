@@ -19,7 +19,6 @@ const imeaGreeting = asyncHandler(async(req, res) => {
         gender= req.query.gender
     } = req.body
 
-    // console.log('isGroup : ' + isGroup)
 
     if(gender.toLowerCase() === 'perempuan'){
         text = `Assalamu'alaikum Kak *${nama.toUpperCase()}*\n\nPerkenalkan saya Candra dari IMEA. Atas nama pengurus IMEA, kami mengucapkan terimakasih atas partisipasi Kakak dalam sensus IMEA 2023. Data Kakak sudah kami simpan.\n\nSelanjutnya, kami mengharapkan keikutsertaan Kakak di group-group whatsapp IMEA di bawah ini ya: \n\nIMEA Putri\nhttps://chat.whatsapp.com/6JlLTas1sCzKASvRL1QtJg\n\nIMEA Gabungan\nhttps://chat.whatsapp.com/HKByy4nonFd8WcJWuBwg2d\n\nMelalui group-group tersebut, kami biasanya menginfokan jadwal kegiatan IMEA, info buka puasa bersama, info berkah ramadhan (ta'jil gratis), dan acara-acara lainnya. \n\nSo, pastikan join group ya, agar tidak ketinggalan.\n\nJazakillaha khairan wa barakallahu fiik\n\nSemoga Allah memudahkan semua urusan kita dimanapun kita berada\n\nWassalamu'alaikum warahmatullah`
@@ -31,13 +30,6 @@ const imeaGreeting = asyncHandler(async(req, res) => {
         throw new Error("TO_REQUIRED")
     }
 
-    // if(!message) {
-    //     res.status(400)
-    //     throw new Error("MESSAGE_REQUIRED")
-    // }
-
-    // const isDeviceIdActive = await activeDeviceId(req.body.deviceId, user)
-    // console.log(isDeviceIdActive)
     if(!device.status === true){
         res.status(400)
         throw new Error("INACTIVE_DEVICE")
@@ -60,7 +52,6 @@ const imeaGreeting = asyncHandler(async(req, res) => {
     
     if(!sendMsg){
         res.status(500)
-        // console.log(error)
         throw new Error("CREATE_MESSAGE_TASK_FAILED")
     }
 
@@ -70,7 +61,6 @@ const imeaGreeting = asyncHandler(async(req, res) => {
     )
     
     console.log('cron start ' + device._id)
-    console.log(cronTask)
     cronTask[device.id].start()
 
     res.status(200).json({

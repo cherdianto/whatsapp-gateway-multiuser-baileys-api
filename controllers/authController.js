@@ -38,22 +38,25 @@ export const register = asyncHandler(async (req, res) => {
         password
     } = req.body
 
-    // check the req.body
+    // FULLNAME CHECK
     if (!fullname) {
         res.status(400)
         throw new Error('FULLNAME_REQUIRED')
     }
 
+    // EMAIL CHECK
     if (!email) {
         res.status(400)
         throw new Error('EMAIL_REQUIRED')
     }
 
+    // PASSWORD CHECK
     if (!password) {
         res.status(400)
         throw new Error('PASSWORD_REQUIRED')
     }
 
+    // EMAIL DUPLICATE CHECK
     const isEmailExist = await User.findOne({
         email: email
     })
@@ -63,12 +66,12 @@ export const register = asyncHandler(async (req, res) => {
         throw new Error('DUPLICATE_EMAIL')
     }
 
-    // make salt
+    // MAKE SALT
     let salt = await bcrypt.genSalt(12)
-    // hash the password
+    // HASH THE PASSWORD
     let hashedPassword = await bcrypt.hash(password, salt)
 
-    // store user info to DB
+    // STORE USER TO DB
     try {
         const newUser = await User.create({
             fullname,
@@ -95,18 +98,19 @@ export const login = asyncHandler(async (req, res) => {
         password
     } = req.body
 
-    // check the req.body
+    // EMAIL CHECK
     if (!email) {
         res.status(400)
         throw new Error('EMAIL_REQUIRED')
     }
 
+    // PASSWORD CHECK
     if (!password) {
         res.status(400)
         throw new Error('PASSWORD_REQUIRED')
     }
 
-    // user exist?
+    // USER EXIST BASED ON EMAIL
     const user = await User.findOne({
         email
     })
@@ -116,14 +120,14 @@ export const login = asyncHandler(async (req, res) => {
         throw new Error("USER_NOT_FOUND")
     }
 
-    // password match?
+    // PASSWORD CHECK
     const isMatch = bcrypt.compareSync(password, user.password)
     if (!isMatch) {
         res.status(400)
         throw new Error("WRONG_PASSWORD")
     }
 
-    // next, generate tokens (access & refresh)
+    // GENERATE TOKENS
     const accessToken = generateAccessToken({
         id: user._id
     })
@@ -132,7 +136,7 @@ export const login = asyncHandler(async (req, res) => {
         id: user._id
     })
 
-    // store refreshToken to database, return new data with some select and populate
+    // SAVE REFRESH TOKEN IN DB
     const updatedUserDb = await User.findOneAndUpdate({
         _id: user._id
     }, {
@@ -147,7 +151,7 @@ export const login = asyncHandler(async (req, res) => {
         throw new Error("ERROR_UPDATE_DB")
     }
 
-    // if updatedUserDb success, then set cookies 
+    // SET COOKIES
     if (env.ENV === 'dev') {
         res.cookie('refreshToken', refreshToken, {
             maxAge: 1 * 24 * 60 * 60 * 1000,
@@ -173,7 +177,6 @@ export const login = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(async (req, res) => {
     const userRefreshToken = req.cookies?.refreshToken
-    console.log(req.cookies)
 
     if (!userRefreshToken) {
         res.status(204)
@@ -191,7 +194,6 @@ export const logout = asyncHandler(async (req, res) => {
         })
     }
 
-    // #NOTE : tidak bisa ada async await throw error inside jwt verify error. 
     const decoded = jwt.verify(userRefreshToken, refreshSecretKey)
 
     if (env.ENV === 'dev') {
@@ -209,18 +211,15 @@ export const logout = asyncHandler(async (req, res) => {
     if (!decoded) {
         res.status(401)
         throw new Error("INVALID_REFRESH_TOKEN")
-        // return Promise.reject("INVALID_REFRESH_TOKEN")
     }
 
     const user = await User.findById(decoded.id)
 
     if (!user) {
         res.status(401)
-        // throw new Error("USER_NOT_FOUND")
         return Promise.reject("USER_NOT_FOUND")
     }
 
-    // update database
     const updateDb = await User.updateOne({
         _id: user._id
     }, {
@@ -250,9 +249,6 @@ export const changePassword = asyncHandler(async (req, res) => {
         confirmNewPassword
     } = req.body
 
-    console.log(oldPassword)
-    console.log(newPassword)
-    console.log(confirmNewPassword)
     const user = req.user
 
     if (!newPassword || newPassword == '') {
@@ -310,7 +306,7 @@ export const refreshToken = asyncHandler(async (req, res) => {
     }
 
     const decoded = jwt.verify(userRefreshToken, refreshSecretKey)
-    console.log(decoded)
+
     if (!decoded) {
         res.status(401)
         throw new Error("INVALID_REFRESH_TOKEN")
@@ -336,7 +332,7 @@ export const refreshToken = asyncHandler(async (req, res) => {
 export const getUser = asyncHandler(async (req, res) => {
 
     const user = await User.findById(req.user._id).populate('devices').select('-password -refreshToken')
-    console.log(user)
+
     res.status(200).json({
         status: true,
         message: "GET_USER_SUCCESS",
@@ -346,14 +342,8 @@ export const getUser = asyncHandler(async (req, res) => {
 
 export const resetPassword = asyncHandler(async (req, res) => {
     // form : email, oldpassword, newpassword
-    console.log(req.query.email)
 
     const email = req.query.email
-
-    // const user = req.user
-
-    // console.log(email)
-    // console.log(user)
 
     if (!email) {
         res.status(400)
@@ -378,7 +368,6 @@ export const resetPassword = asyncHandler(async (req, res) => {
         expiryAt
     })
 
-    console.log(newToken)
     if(!newToken){
         res.status(400)
         throw new Error("RESET_LINK_FAILED")
@@ -414,7 +403,7 @@ export const validateResetLink = asyncHandler(async (req, res) => {
 })
 
 export const newPasswordFromReset = asyncHandler(async (req, res) => {
-    console.log(req.body.token, req.body.new_password)
+
     const {
         token,
         new_password,

@@ -1,10 +1,8 @@
-const bypassVariable = ({cronTask}) => {
-    console.log('bypass mid')
-    console.log(cronTask)
+const bypassVariable = ({io, cronTask}) => {
     const bypass = (req, res, next) => {
-        
+        req.io = io
         req.cronTask = cronTask
-        res.locals.cronTask = cronTask
+        // res.locals.cronTask = cronTask
         next()
     }
 

@@ -1,10 +1,8 @@
 import { validationResult } from 'express-validator'
-import response from './../response.js'
+import response from '../utils/response.js'
 
 const validate = (req, res, next) => {
     const errors = validationResult(req)
-    console.log('validate error :')
-    console.log(errors)
 
     if (!errors.isEmpty()) {
         return response(res, 400, false, 'Please fill out all required input.')

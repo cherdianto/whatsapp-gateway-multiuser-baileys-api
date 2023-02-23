@@ -1,5 +1,5 @@
-import { isSessionExists, createSession, getSession, deleteSession, getAllSessions } from './../whatsapp.js'
-import response from './../response.js'
+import { isSessionExists, createSession, getSession, deleteSession, getAllSessions } from '../utils/whatsapp.js'
+import response from '../utils/response.js'
 
 const find = (req, res) => {
     response(res, 200, true, 'Session found.')
@@ -28,15 +28,13 @@ const getAll = (req, res) => {
 // @req.body {id:deviceId, isLegacy:false}
 const add = (req, res) => {
     const deviceId = req.device.id || req.body.id
-    const {isLegacy} = req.body
-
-    console.log(deviceId, isLegacy)
+    const isLegacy = false
 
     if (isSessionExists(deviceId)) {
         return response(res, 409, false, 'Session already exists')
     }
-
-    createSession(deviceId, isLegacy, res)
+    
+    createSession({deviceId, isLegacy, res})
 }
 
 const del = async (req, res) => {

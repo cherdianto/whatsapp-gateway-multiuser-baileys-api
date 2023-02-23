@@ -14,7 +14,7 @@ router.get('/all', verifyToken, controller.getAll)
 
 router.get('/status', verifyApiKey, sessionValidator, controller.status)
 
-router.post('/add', body('isLegacy').notEmpty(), verifyApiKey, requestValidator, controller.add)
+router.get('/add', verifyApiKey, controller.add)
 
 router.delete('/delete', verifyToken, verifyApiKey, sessionValidator, controller.del)
 

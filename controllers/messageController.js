@@ -26,8 +26,6 @@ const addMessage = asyncHandler(async(req, res) => {
         priority = req.query.priority,
     } = req.body
 
-    console.log('isGroup : ' + isGroup)
-
     if(!to) {
         res.status(400)
         throw new Error("TO_REQUIRED")
@@ -38,8 +36,7 @@ const addMessage = asyncHandler(async(req, res) => {
         throw new Error("MESSAGE_REQUIRED")
     }
 
-    // const isDeviceIdActive = await activeDeviceId(req.body.deviceId, user)
-    // console.log(isDeviceIdActive)
+    
     if(!device.status === true){
         res.status(400)
         throw new Error("INACTIVE_DEVICE")
@@ -69,7 +66,6 @@ const addMessage = asyncHandler(async(req, res) => {
     )
     
     console.log('cron start ' + device._id)
-    console.log(cronTask)
     cronTask[device.id].start()
 
     res.status(200).json({
